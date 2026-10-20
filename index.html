@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f0e0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="黒服タスク">
+<title>黒服タスク</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Josefin+Sans:wght@400;600&display=swap">
+<style>
+/* 試作デモ（kurofuku-mock.html）の見た目をそのまま使用 */
+:root{
+  --bg:#0f0e0c; --surface:#1a1814; --surface2:#24211b; --line:#35302a;
+  --fg:#f3eee4; --muted:#a49d8f; --gold:#d8b46a; --gold-ink:#1a1408;
+  --doing:#78a3f2; --done:#62c194; --todo:#e3836f;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --f-num:"Josefin Sans","Zen Kaku Gothic New",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--fg);margin:0}
+body{font-family:var(--f-body);font-size:15px;line-height:1.55;padding-inline:16px;padding-block:0;-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:8px}
+.app{max-width:460px;margin:0 auto;padding-bottom:96px;padding-top:env(safe-area-inset-top,0px)}
+header.top{display:flex;align-items:center;gap:12px;padding-top:14px}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--gold);color:var(--gold-ink);display:grid;place-items:center;font-weight:700;font-size:18px;flex:none}
+.hello{min-width:0;flex:1}
+.hello small{display:block;color:var(--muted);font-size:12px}
+.hello select{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font:inherit;font-weight:700;font-size:16px;max-width:60vw}
+.sync{flex:none;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sync.bad{color:var(--todo);border-color:var(--todo)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px;text-align:center}
+.week div{font-size:11px;color:var(--muted);display:grid;gap:2px;justify-items:center}
+.week span{font-family:var(--f-num);font-size:16px;color:var(--fg);width:34px;height:34px;display:grid;place-items:center;border-radius:50%}
+.week .today span{background:var(--gold);color:var(--gold-ink);font-weight:600}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;margin-top:16px}
+.seg button{padding:9px 6px;border-radius:9px;font-weight:500;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface2);color:var(--fg);box-shadow:inset 0 0 0 1px var(--gold)}
+.seg small{display:block;font-size:11px;font-weight:400}
+.hero{display:flex;gap:18px;align-items:center;background:var(--surface);border-radius:16px;padding:16px;margin-top:12px;border:1px solid var(--line)}
+.ring{flex:none}
+.ring text{font-family:var(--f-num);fill:var(--fg)}
+.hero h2{margin:0;font-size:13px;color:var(--muted);font-weight:500}
+.big{font-family:var(--f-num);font-size:34px;line-height:1.1;font-variant-numeric:tabular-nums}
+.big small{font-family:var(--f-body);font-size:13px;color:var(--muted);margin-left:4px}
+.dead{font-size:13px;color:var(--muted);margin-top:4px}
+.dead b{color:var(--gold);font-family:var(--f-num);font-size:18px;font-weight:600}
+.mine{margin-top:12px;border:1px solid var(--doing);background:color-mix(in srgb,var(--doing) 12%,var(--surface));border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;width:100%;text-align:left}
+.mine div{min-width:0;flex:1}
+.mine b{display:block;font-size:16px}
+.mine small{color:var(--muted)}
+h3{font-size:13px;color:var(--muted);font-weight:500;margin:20px 0 8px;letter-spacing:.04em}
+.list{display:grid;gap:8px}
+.row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;text-align:left}
+.row .name{flex:1;min-width:0}
+.row .name b{display:block;font-weight:500}
+.row .name small{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--muted);flex:none}
+.dot.doing{border-color:var(--doing);background:radial-gradient(var(--doing) 45%,transparent 50%)}
+.dot.done{border-color:var(--done);background:var(--done)}
+.pill{font-size:12px;border-radius:999px;padding:3px 9px;white-space:nowrap;flex:none}
+.pill.todo{background:var(--surface2);color:var(--muted)}
+.pill.doing{background:color-mix(in srgb,var(--doing) 22%,transparent);color:var(--doing)}
+.pill.done{background:color-mix(in srgb,var(--done) 20%,transparent);color:var(--done)}
+.pill.extra{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
+.cta{display:block;width:100%;margin-top:16px;background:var(--gold);color:var(--gold-ink);font-weight:700;border-radius:14px;padding:15px;font-size:16px}
+.cta[disabled]{opacity:.35;cursor:default}
+.ghost{display:block;width:100%;margin-top:8px;border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--muted)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav.tabs[hidden]{display:none}
+nav.tabs div{max-width:460px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr)}
+nav.tabs button{padding:12px 4px 10px;font-size:12px;color:var(--muted);display:grid;justify-items:center;gap:3px}
+nav.tabs button[aria-current="page"]{color:var(--gold)}
+nav.tabs svg{width:22px;height:22px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-family:var(--f-num);font-size:26px;font-variant-numeric:tabular-nums}
+.stat small{font-size:12px;color:var(--muted)}
+.alert{border:1px solid var(--todo);background:color-mix(in srgb,var(--todo) 10%,var(--surface));border-radius:12px;padding:10px 14px;margin-top:12px;font-size:14px}
+.alert b{color:var(--todo)}
+.log{display:grid;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+.log div{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.log div:last-child{border-bottom:0}
+.log time{font-family:var(--f-num);color:var(--muted);font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);font-size:13px;padding:10px 0;margin:0}
+.note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.6}
+/* エリア詳細（下から出るシート） */
+.veil{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;width:100%;max-width:460px;max-height:88%;overflow:auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px}
+.sheet h2{margin:0;font-size:20px;text-wrap:balance}
+.sheet .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:13px;color:var(--muted)}
+.steps{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:6px}
+.steps button{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.steps button[disabled]{opacity:.5;cursor:default}
+.box{width:22px;height:22px;border-radius:7px;border:2px solid var(--muted);flex:none;display:grid;place-items:center;margin-top:1px}
+.on .box{background:var(--done);border-color:var(--done)}
+.on .box::after{content:"";width:6px;height:11px;border:solid var(--bg);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.on .txt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.warn{margin-top:12px;font-size:14px;border:1px solid var(--doing);border-radius:12px;padding:10px 12px}
+.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-size:14px;z-index:20;max-width:calc(100% - 32px);text-align:center}
+/* 入口（合言葉・名前選び） */
+.gate{min-height:80vh;display:grid;align-content:center;gap:14px;padding-top:24px}
+.gate .logo{font-family:var(--f-num);letter-spacing:.2em;color:var(--gold);font-size:13px}
+.gate h1{margin:0;font-size:26px}
+.gate p{margin:0;color:var(--muted);font-size:14px}
+.gate label{font-size:13px;color:var(--muted)}
+.gate input{width:100%;margin-top:6px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:14px;font:inherit;font-size:17px}
+.gate .err{color:var(--todo);font-size:14px}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.names button{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 10px;font-weight:700;font-size:17px}
+.spin{color:var(--muted);text-align:center;padding:60px 0}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+</head>
+<body>
+<div class="app"><main id="view"><p class="spin">読み込み中…</p></main></div>
+
+<nav class="tabs" aria-label="画面切り替え" hidden><div>
+  <button data-tab="home" aria-current="page" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>ホーム</button>
+  <button data-tab="manager" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 15l3-3 3 2 4-5"/></svg>店長画面</button>
+  <button data-tab="history" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg>履歴</button>
+</div></nav>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+/* =========================================================
+   黒服タスク テスト運用版 v1
+   データはすべて Supabase の関数（kf_state / kf_act / kf_history / kf_day_log）経由。
+   合言葉と名前はこのスマホに記憶する（localStorage）。
+   ========================================================= */
+const CFG = window.KUROFUKU_CONFIG || {};
+const POLL_MS = 15000;           // 他のスマホの変更を取り込む間隔
+const WD = ["日","月","火","水","木","金","土"];
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} }
+};
+
+let db = null;
+let pass = store.get("kf_pass");
+let me = store.get("kf_me");
+let S = null;                    // サーバーから来た今日の状態
+let tab = "home", phase = null;
+let pending = 0, dirty = false, queue = Promise.resolve();
+let syncState = "ok", lastSync = null;
+let sheetId = null;              // 開いているエリア
+let hist = null, histErr = false;
+
+const view = document.getElementById("view");
+const nav = document.querySelector("nav.tabs");
+
+/* ---------- 小道具 ---------- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const hm = t => t ? new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Tokyo"}) : "";
+function bd(){ const [y,m,d] = S.biz_date.split("-").map(Number); return new Date(y, m-1, d, 12, 0, 0); }
+function at(h, mi, addDay=0){ const d = bd(); d.setDate(d.getDate()+addDay); d.setHours(h, mi, 0, 0); return d; }
+function toast(t){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const el=document.createElement("div"); el.className="toast"; el.setAttribute("role","status"); el.textContent=t; document.body.appendChild(el); setTimeout(()=>el.remove(), 2400); }
+const areas = ph => S.areas.filter(a => a.phase === ph);
+const areaById = id => S.areas.find(a => a.id === id);
+const checkedOf = a => a.checked.filter(id => a.steps.some(s => s.id === id));
+function defaultPhase(){ const h = new Date().getHours(); return (h >= 23 || h < 6) ? "close" : "open"; }
+
+/* ---------- サーバーとのやりとり ---------- */
+async function call(fn, args = {}){
+  const { data, error } = await db.rpc(fn, { p_pass: pass, ...args });
+  if (error) throw error;
+  return data;
+}
+function codeOf(e){ const m = (e && e.message) || ""; const k = ["wrong_pass","unknown_staff","other_doing","already_done","not_all_checked","not_mine","not_doing","not_done","unknown_area","unknown_step"].find(x => m.includes(x)); return { k, m }; }
+function handleErr(e){
+  const { k, m } = codeOf(e);
+  if (k === "wrong_pass"){ pass = null; store.del("kf_pass"); S = null; showGate("合言葉が違います。変わった場合は新しい合言葉を入れてください。"); return; }
+  if (k === "unknown_staff"){ me = null; store.del("kf_me"); toast("名前が一覧にありません。選び直してください"); render(); return; }
+  if (k === "other_doing"){ toast((m.split("other_doing:")[1] || "他の人") + "さんが担当中です"); }
+  else if (k === "already_done"){ toast("すでに完了しています"); }
+  else if (k === "not_all_checked"){ toast("まだチェックしていない手順があります"); }
+  else if (k){ toast("他の人が先に操作しました。最新の状態にしました"); }
+  else { syncState = "bad"; toast("通信できませんでした。電波を確認してもう一度押してください"); }
+  dirty = true;
+}
+function setState(d){
+  const first = !S;
+  S = d; lastSync = new Date(); syncState = "ok";
+  if (!phase || first) phase = phase || defaultPhase();
+  if (sheetId && !areaById(sheetId)) closeSheet();
+  render();
+}
+async function refresh(){
+  if (!pass || pending) return;
+  try { const d = await call("kf_state"); if (!pending) setState(d); }
+  catch(e){ const { k } = codeOf(e); if (k) handleErr(e); else { syncState = "bad"; paintSync(); } }
+}
+
+/* 操作：画面は先に変え（待たせない）、サーバーの返事で正しい状態に合わせる */
+function act(areaId, action, step = null){
+  const a = areaById(areaId); if (!a) return;
+  if (action === "toggle"){
+    if (a.status === "todo"){ a.status = "doing"; a.who = me; a.started_at = new Date().toISOString(); }
+    a.checked = a.checked.includes(step) ? a.checked.filter(x => x !== step) : [...a.checked, step];
+  }
+  if (action === "finish"){ a.status = "done"; a.done_at = new Date().toISOString(); }
+  if (action === "undo"){ a.status = "doing"; a.who = me; a.done_at = null; }
+  if (action === "take"){ a.who = me; }
+  if (action === "drop"){ a.status = "todo"; a.who = null; a.started_at = null; a.checked = []; }
+  render();
+  pending++; syncState = "busy"; paintSync();
+  queue = queue.then(async () => {
+    try {
+      const d = await call("kf_act", { p_who: me, p_area: areaId, p_action: action, p_step: step });
+      if (pending === 1 && !dirty) setState(d);
+    } catch(e){ handleErr(e); }
+    finally {
+      pending--;
+      if (pending === 0){ if (dirty){ dirty = false; refresh(); } else if (syncState === "busy"){ syncState = "ok"; paintSync(); } }
+    }
+  });
+}
+
+/* ---------- 入口：合言葉 ---------- */
+function showGate(msg = ""){
+  nav.hidden = true; closeSheet();
+  view.innerHTML = `
+  <form class="gate" id="gate" autocomplete="off">
+    <div class="logo">KUROFUKU TASK</div>
+    <h1>黒服タスク</h1>
+    <p>お店の合言葉を入れてください。<br>1回入れれば、このスマホが覚えます。</p>
+    <label>合言葉<input id="pw" type="password" enterkeyhint="go" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>
+    ${msg ? `<div class="err" role="alert">${esc(msg)}</div>` : ""}
+    <button class="cta" type="submit" id="go">はじめる</button>
+  </form>`;
+  const f = document.getElementById("gate"), pw = document.getElementById("pw"), go = document.getElementById("go");
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const v = pw.value.trim(); if (!v) return;
+    go.disabled = true; go.textContent = "確認中…";
+    pass = v;
+    try { const d = await call("kf_state"); store.set("kf_pass", v); setState(d); }
+    catch(e){
+      const { k } = codeOf(e); pass = null;
+      showGate(k === "wrong_pass" ? "合言葉が違います。" : "通信できませんでした。電波を確認してもう一度押してください。");
+    }
+  };
+  setTimeout(() => pw.focus(), 50);
+}
+
+/* ---------- 入口：名前を選ぶ ---------- */
+function pickName(){
+  nav.hidden = true;
+  view.innerHTML = `
+  <div class="gate">
+    <div class="logo">KUROFUKU TASK</div>
+    <h1>あなたの名前は？</h1>
+    <p>このスマホを使う人の名前を選んでください。あとで変えられます。</p>
+    <div class="names">${S.staff.map(n => `<button type="button" data-name="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+    ${S.staff.length ? "" : `<p class="err">名前の一覧が空です。藤山さんに登録してもらってください。</p>`}
+    <p class="note">名前が一覧にないときは、藤山さんに伝えてください。</p>
+  </div>`;
+  view.querySelectorAll("[data-name]").forEach(b => b.onclick = () => { me = b.dataset.name; store.set("kf_me", me); render(); });
+}
+
+/* ---------- 集計 ---------- */
+function summary(ph){
+  const as = areas(ph); let done = 0, doing = 0, steps = 0, total = 0;
+  as.forEach(a => { if (a.status === "done") done++; if (a.status === "doing") doing++; steps += checkedOf(a).length; total += a.steps.length; });
+  return { n: as.length, done, doing, todo: as.length - done - doing, steps, total };
+}
+function deadline(ph){
+  const t = ph === "open" ? at(19, 30) : at(2, 0, 1);
+  const diff = Math.round((t - new Date()) / 60000);
+  const label = ph === "open" ? "19:30（同伴入店）まで" : "2:00まで";
+  if (diff < 0) return `${label} <b>時間超過</b>`;
+  const h = Math.floor(diff / 60), m = diff % 60;
+  return `${label} あと <b>${h ? h + "時間" : ""}${m}分</b>`;
+}
+function ring(pct, size = 92){ const r = size/2 - 7, c = 2*Math.PI*r; return `<svg class="ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="進捗 ${pct}%"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="8"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--gold)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c*pct/100} ${c}" transform="rotate(-90 ${size/2} ${size/2})"/><text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-size="22">${pct}%</text></svg>`; }
+function pill(a){
+  if (a.status === "done") return `<span class="pill done">完了 ${hm(a.done_at)} ${esc(a.who)}</span>`;
+  if (a.status === "doing") return `<span class="pill doing">${a.who === me ? "あなた" : esc(a.who)} 進行中</span>`;
+  return a.extra ? `<span class="pill extra">今日だけ</span>` : `<span class="pill todo">未着手</span>`;
+}
+function segHTML(){ return `<div class="seg" role="group" aria-label="作業の区分"><button type="button" data-phase="open" aria-pressed="${phase==="open"}">営業前準備<small>16:00〜19:30</small></button><button type="button" data-phase="close" aria-pressed="${phase==="close"}">締め作業<small>1:00〜2:00</small></button></div>`; }
+function syncHTML(){
+  const txt = syncState === "busy" ? "保存中…" : syncState === "bad" ? "未接続・再試行" : (lastSync ? "更新 " + hm(lastSync) : "");
+  return `<button type="button" class="sync ${syncState === "bad" ? "bad" : ""}" id="sync" aria-live="polite">${txt}</button>`;
+}
+function paintSync(){ const el = document.getElementById("sync"); if (el) el.outerHTML = syncHTML(), bindSync(); }
+function bindSync(){ const el = document.getElementById("sync"); if (el) el.onclick = () => { syncState = "busy"; paintSync(); refresh(); }; }
+function logLine(l){
+  const a = esc(l.area), t = {start:`${a} を開始`, finish:`${a} を完了`, undo:`${a} の完了を取り消し`, drop:`${a} の担当をやめる`, take:`${a} を ${esc(l.detail)}さんから引き継ぎ`}[l.action] || `${a} ${esc(l.action)}`;
+  return `<div><time>${hm(l.at)}</time><span>${esc(l.who)}　${t}</span></div>`;
+}
+
+/* ---------- 画面 ---------- */
+function render(){
+  if (!pass) return showGate();
+  if (!S) return;
+  if (!me || !S.staff.includes(me)) return pickName();
+  nav.hidden = false;
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
+  view.innerHTML = tab === "home" ? home() : tab === "manager" ? manager() : history();
+  view.querySelectorAll("[data-phase]").forEach(b => b.onclick = () => { phase = b.dataset.phase; render(); });
+  view.querySelectorAll("[data-area]").forEach(b => b.onclick = () => openSheet(b.dataset.area));
+  view.querySelectorAll("[data-day]").forEach(b => b.onclick = () => openDay(b.dataset.day));
+  const sel = view.querySelector("#who"); if (sel) sel.onchange = () => { me = sel.value; store.set("kf_me", me); render(); };
+  const nx = view.querySelector("#next"); if (nx) nx.onclick = () => { const a = areas(phase).find(a => a.status === "todo"); if (a) openSheet(a.id); };
+  const lo = view.querySelector("#logout"); if (lo) lo.onclick = () => { if (confirm("このスマホから合言葉を消しますか？（次に開くとき入力が必要です）")){ store.del("kf_pass"); pass = null; S = null; showGate(); } };
+  const rn = view.querySelector("#rename"); if (rn) rn.onclick = () => { me = null; store.del("kf_me"); render(); };
+  bindSync();
+  if (sheetId) drawSheet();
+}
+
+function home(){
+  const s = summary(phase), pct = s.total ? Math.round(s.steps / s.total * 100) : 0, B = bd();
+  const off = (B.getDay() + 6) % 7;
+  const week = [...Array(7)].map((_, i) => { const d = new Date(B); d.setDate(B.getDate() - off + i); return `<div class="${i === off ? "today" : ""}">${WD[d.getDay()]}<span>${d.getDate()}</span></div>`; }).join("");
+  const mine = areas(phase).find(a => a.status === "doing" && a.who === me);
+  const rows = areas(phase).map(a => `<button type="button" class="row" data-area="${esc(a.id)}"><span class="dot ${a.status}"></span><span class="name"><b>${esc(a.name)}</b><small>手順 ${checkedOf(a).length}/${a.steps.length}</small></span>${pill(a)}</button>`).join("");
+  return `
+  <header class="top"><div class="avatar">${esc(me[0])}</div><div class="hello"><small>おつかれさまです</small>
+    <select id="who" aria-label="自分の名前">${S.staff.map(n => `<option ${n === me ? "selected" : ""}>${esc(n)}</option>`).join("")}</select> さん</div>${syncHTML()}</header>
+  <div class="week" aria-label="今週">${week}</div>
+  ${segHTML()}
+  <section class="hero">${ring(pct)}<div><h2>${phase === "open" ? "営業前準備" : "締め作業"}</h2>
+    <div class="big">${s.done}/${s.n}<small>エリア完了</small></div>
+    <div class="dead">${deadline(phase)}</div></div></section>
+  ${mine ? `<button type="button" class="mine" data-area="${esc(mine.id)}"><span class="dot doing"></span><div><small>あなたが進行中</small><b>${esc(mine.name)}</b><small>手順 ${checkedOf(mine).length}/${mine.steps.length} ・ ${hm(mine.started_at)}開始</small></div><span aria-hidden="true">›</span></button>` : ""}
+  <h3>エリア（タップで手順を開く）</h3>
+  <div class="list">${rows || `<p class="empty">エリアが登録されていません。</p>`}</div>
+  <button type="button" class="cta" id="next" ${s.todo ? "" : "disabled"}>${s.todo ? "未着手のエリアを始める" : "すべて着手済み"}</button>
+  <p class="note">営業日は朝6時で切り替わります。週間・月間の清掃はその日だけ「今日の定期清掃」に出ます。</p>`;
+}
+
+function manager(){
+  const s = summary(phase), pct = s.total ? Math.round(s.steps / s.total * 100) : 0, B = bd();
+  const todo = areas(phase).filter(a => a.status === "todo");
+  const staff = S.staff.map(n => {
+    const doing = S.areas.find(a => a.status === "doing" && a.who === n);
+    const done = S.areas.filter(a => a.status === "done" && a.who === n).length;
+    if (!doing && !done) return "";
+    return `<div class="row" style="cursor:default"><div class="avatar" style="width:34px;height:34px;font-size:14px">${esc(n[0])}</div><span class="name"><b>${esc(n)}</b><small>${doing ? esc(doing.name) + " ・ " + hm(doing.started_at) + "から" : "手が空いています"}</small></span>${doing ? `<span class="pill doing">進行中</span>` : ""}${done ? `<span class="pill done">完了 ${done}</span>` : ""}</div>`;
+  }).join("") || `<p class="empty">まだ誰も作業を始めていません。</p>`;
+  const lg = [...S.logs].reverse().map(logLine).join("") || `<p class="empty">記録はまだありません。</p>`;
+  return `
+  <header class="top"><div class="hello"><small>店長画面（閲覧のみ）</small><b style="font-size:18px">${B.getMonth()+1}/${B.getDate()}（${WD[B.getDay()]}）の状況</b></div>${syncHTML()}</header>
+  ${segHTML()}
+  <section class="hero">${ring(pct)}<div><h2>手順 ${s.steps}/${s.total}</h2><div class="big">${s.done}/${s.n}<small>エリア完了</small></div><div class="dead">${deadline(phase)}</div></div></section>
+  <div class="stats"><div class="stat"><b style="color:var(--done)">${s.done}</b><small>完了</small></div><div class="stat"><b style="color:var(--doing)">${s.doing}</b><small>進行中</small></div><div class="stat"><b style="color:var(--todo)">${s.todo}</b><small>未着手</small></div></div>
+  ${todo.length ? `<div class="alert"><b>未着手 ${todo.length}件</b>　${todo.map(a => esc(a.name)).join("・")}</div>` : ""}
+  <h3>スタッフの状況</h3><div class="list">${staff}</div>
+  <h3>今日の記録</h3><div class="log">${lg}</div>`;
+}
+
+function history(){
+  const B = bd();
+  const today = ["open","close"].map(ph => { const s = summary(ph); return `<div class="row" style="cursor:default"><span class="name"><b>${ph === "open" ? "営業前準備" : "締め作業"}</b><small>エリア ${s.done}/${s.n} 完了 ・ 手順 ${s.steps}/${s.total}</small></span></div>`; }).join("");
+  const lg = [...S.logs].reverse().map(logLine).join("");
+  let past;
+  if (histErr) past = `<p class="empty">読み込めませんでした。上の「更新」を押してください。</p>`;
+  else if (!hist) past = `<p class="empty">読み込み中…</p>`;
+  else if (!hist.length) past = `<p class="empty">まだ過去の記録はありません。</p>`;
+  else past = hist.map(h => {
+    const [y, m, d] = h.biz_date.split("-").map(Number), dt = new Date(y, m-1, d);
+    const o = h.open, c = h.close;
+    return `<button type="button" class="row" data-day="${esc(h.biz_date)}"><span class="name"><b>${m}/${d}（${WD[dt.getDay()]}）</b><small>準備 ${o.done}/${o.n}${o.last ? "・最終 " + hm(o.last) : ""}　締め ${c.done}/${c.n}${c.last ? "・最終 " + hm(c.last) : ""}</small></span><span aria-hidden="true">›</span></button>`;
+  }).join("");
+  return `
+  <header class="top"><div class="hello"><small>営業日ごとの記録</small><b style="font-size:18px">履歴</b></div>${syncHTML()}</header>
+  <h3>今日 ${B.getMonth()+1}/${B.getDate()}（${WD[B.getDay()]}）</h3><div class="list">${today}</div>
+  <h3>今日の操作ログ</h3><div class="log">${lg || '<p class="empty">記録はまだありません。</p>'}</div>
+  <h3>過去の営業日（タップで記録を見る）</h3><div class="list">${past}</div>
+  <h3>このスマホの設定</h3>
+  <button type="button" class="ghost" id="rename">名前を選び直す（いま：${esc(me)}）</button>
+  <button type="button" class="ghost" id="logout">合言葉を消す</button>`;
+}
+async function loadHistory(){
+  histErr = false;
+  try { hist = await call("kf_history", { p_days: 60 }); }
+  catch(e){ const { k } = codeOf(e); if (k) return handleErr(e); histErr = true; }
+  if (tab === "history") render();
+}
+
+/* ---------- エリア詳細（手順チェック） ---------- */
+let veil = null;
+function openSheet(id){ sheetId = id; drawSheet(); }
+function closeSheet(){ sheetId = null; if (veil){ veil.remove(); veil = null; } }
+function ensureVeil(){
+  if (veil) return veil;
+  veil = document.createElement("div"); veil.className = "veil";
+  veil.onclick = e => { if (e.target === veil){ closeSheet(); render(); } };
+  document.body.appendChild(veil);
+  return veil;
+}
+function drawSheet(){
+  const a = areaById(sheetId); if (!a){ closeSheet(); return; }
+  const v = ensureVeil();
+  const old = v.querySelector(".sheet"), scroll = old ? old.scrollTop : 0;
+  const other = a.status === "doing" && a.who !== me;
+  const chk = checkedOf(a), left = a.steps.length - chk.length;
+  v.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(a.name)}">
+    <div class="grab"></div>
+    <h2>${esc(a.name)}</h2>
+    <div class="meta">${pill(a)}<span>手順 ${chk.length}/${a.steps.length}</span></div>
+    ${other ? `<div class="warn">${esc(a.who)}さんが担当中です。<button type="button" id="take" style="color:var(--doing);text-decoration:underline">自分が引き継ぐ</button></div>` : ""}
+    <ul class="steps">${a.steps.map(s => `<li><button type="button" data-i="${s.id}" class="${chk.includes(s.id) ? "on" : ""}" ${other || a.status === "done" ? "disabled" : ""}><span class="box"></span><span class="txt">${esc(s.body)}</span></button></li>`).join("")}</ul>
+    ${a.status === "done"
+      ? `<button type="button" class="ghost" id="undo">完了を取り消す</button>`
+      : `<button type="button" class="cta" id="finish" ${left || other ? "disabled" : ""}>${other ? "担当中のスタッフが完了します" : left ? "残り " + left + " 項目" : "このエリアを完了する"}</button>
+         ${a.status === "doing" && a.who === me ? `<button type="button" class="ghost" id="drop">担当をやめる</button>` : ""}`}
+    <button type="button" class="ghost" id="close">閉じる</button>
+  </div>`;
+  v.querySelector(".sheet").scrollTop = scroll;
+  const q = s => v.querySelector(s);
+  v.querySelectorAll("[data-i]").forEach(b => b.onclick = () => act(a.id, "toggle", Number(b.dataset.i)));
+  q("#close").onclick = () => { closeSheet(); render(); };
+  if (q("#take")) q("#take").onclick = () => { if (confirm(a.who + "さんの作業を引き継ぎますか？")){ act(a.id, "take"); toast("引き継ぎました"); } };
+  if (q("#finish")) q("#finish").onclick = () => { const n = a.name; closeSheet(); act(a.id, "finish"); toast(n + " を完了しました"); };
+  if (q("#undo")) q("#undo").onclick = () => act(a.id, "undo");
+  if (q("#drop")) q("#drop").onclick = () => { if (confirm("チェックした手順も消えます。担当をやめますか？")){ closeSheet(); act(a.id, "drop"); } };
+}
+
+/* 過去の営業日の記録 */
+async function openDay(day){
+  const [y, m, d] = day.split("-").map(Number), dt = new Date(y, m-1, d);
+  closeSheet();
+  const v = ensureVeil();
+  const paint = body => { v.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${m}/${d}の記録"><div class="grab"></div><h2>${m}/${d}（${WD[dt.getDay()]}）の記録</h2><div style="margin-top:14px">${body}</div><button type="button" class="ghost" id="close">閉じる</button></div>`; v.querySelector("#close").onclick = () => { closeSheet(); render(); }; };
+  paint(`<p class="empty">読み込み中…</p>`);
+  try {
+    const logs = await call("kf_day_log", { p_date: day });
+    if (veil === v) paint(logs.length ? `<div class="log">${logs.map(logLine).join("")}</div>` : `<p class="empty">この日の記録はありません。</p>`);
+  } catch(e){ const { k } = codeOf(e); if (k) { closeSheet(); handleErr(e); } else if (veil === v) paint(`<p class="empty">読み込めませんでした。電波を確認してください。</p>`); }
+}
+
+/* ---------- 起動 ---------- */
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => {
+  tab = b.dataset.tab; window.scrollTo(0, 0); closeSheet(); render();
+  if (tab === "history") loadHistory();
+});
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
+setInterval(() => { if (document.visibilityState === "visible") refresh(); }, POLL_MS);
+setInterval(() => { if (S && pass && me && !sheetId && document.visibilityState === "visible") render(); }, 60000); // 残り時間の表示を更新
+
+(function boot(){
+  const ok = s => typeof s === "string" && s.trim() && !s.includes("ここに");
+  if (!ok(CFG.url) || !ok(CFG.key)){
+    view.innerHTML = `<div class="gate"><h1>設定がまだです</h1><p>config.js に Supabase の Project URL と Publishable key を貼り付けてください。</p></div>`;
+    return;
+  }
+  if (!window.supabase){
+    view.innerHTML = `<div class="gate"><h1>読み込めませんでした</h1><p>電波を確認して、ページを再読み込みしてください。</p></div>`;
+    return;
+  }
+  db = window.supabase.createClient(CFG.url.trim(), CFG.key.trim(), { auth: { persistSession: false, autoRefreshToken: false } });
+  if (!pass) return showGate();
+  call("kf_state").then(setState).catch(e => {
+    const { k } = codeOf(e);
+    if (k) handleErr(e);
+    else view.innerHTML = `<div class="gate"><h1>通信できませんでした</h1><p>電波を確認して、ページを再読み込みしてください。</p><button class="cta" type="button" onclick="location.reload()">再読み込み</button></div>`;
+  });
+})();
+</script>
+</body>
+</html>
