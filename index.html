@@ -393,21 +393,25 @@ async function loadHistory(){
 let veil = null;
 function openSheet(id){ sheetId = id; drawSheet(); }
 function closeSheet(){ sheetId = null; if (veil){ veil.remove(); veil = null; } }
+/* シートの枠は開いたときに1回だけ作る（作り直すと出てくる動きが毎回再生されてピクッとなるため） */
 function ensureVeil(){
-  if (veil) return veil;
+  if (veil) return veil.firstChild;
   veil = document.createElement("div"); veil.className = "veil";
   veil.onclick = e => { if (e.target === veil){ closeSheet(); render(); } };
+  const sh = document.createElement("div");
+  sh.className = "sheet"; sh.setAttribute("role", "dialog"); sh.setAttribute("aria-modal", "true");
+  veil.appendChild(sh);
   document.body.appendChild(veil);
-  return veil;
+  return sh;
 }
 function drawSheet(){
   const a = areaById(sheetId); if (!a){ closeSheet(); return; }
   const v = ensureVeil();
-  const old = v.querySelector(".sheet"), scroll = old ? old.scrollTop : 0;
+  const scroll = v.scrollTop;
   const other = a.status === "doing" && a.who !== me;
   const chk = checkedOf(a), left = a.steps.length - chk.length;
-  v.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(a.name)}">
-    <div class="grab"></div>
+  v.setAttribute("aria-label", a.name);
+  v.innerHTML = `<div class="grab"></div>
     <h2>${esc(a.name)}</h2>
     <div class="meta">${pill(a)}<span>手順 ${chk.length}/${a.steps.length}</span></div>
     ${other ? `<div class="warn">${esc(a.who)}さんが担当中です。<button type="button" id="take" style="color:var(--doing);text-decoration:underline">自分が引き継ぐ</button></div>` : ""}
@@ -416,9 +420,8 @@ function drawSheet(){
       ? `<button type="button" class="ghost" id="undo">完了を取り消す</button>`
       : `<button type="button" class="cta" id="finish" ${left || other ? "disabled" : ""}>${other ? "担当中のスタッフが完了します" : left ? "残り " + left + " 項目" : "このエリアを完了する"}</button>
          ${a.status === "doing" && a.who === me ? `<button type="button" class="ghost" id="drop">担当をやめる</button>` : ""}`}
-    <button type="button" class="ghost" id="close">閉じる</button>
-  </div>`;
-  v.querySelector(".sheet").scrollTop = scroll;
+    <button type="button" class="ghost" id="close">閉じる</button>`;
+  v.scrollTop = scroll;
   const q = s => v.querySelector(s);
   v.querySelectorAll("[data-i]").forEach(b => b.onclick = () => act(a.id, "toggle", Number(b.dataset.i)));
   q("#close").onclick = () => { closeSheet(); render(); };
@@ -433,12 +436,14 @@ async function openDay(day){
   const [y, m, d] = day.split("-").map(Number), dt = new Date(y, m-1, d);
   closeSheet();
   const v = ensureVeil();
-  const paint = body => { v.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${m}/${d}の記録"><div class="grab"></div><h2>${m}/${d}（${WD[dt.getDay()]}）の記録</h2><div style="margin-top:14px">${body}</div><button type="button" class="ghost" id="close">閉じる</button></div>`; v.querySelector("#close").onclick = () => { closeSheet(); render(); }; };
+  v.setAttribute("aria-label", `${m}/${d}の記録`);
+  const paint = body => { v.innerHTML = `<div class="grab"></div><h2>${m}/${d}（${WD[dt.getDay()]}）の記録</h2><div style="margin-top:14px">${body}</div><button type="button" class="ghost" id="close">閉じる</button>`; v.querySelector("#close").onclick = () => { closeSheet(); render(); }; };
+  const alive = () => veil && veil.firstChild === v;
   paint(`<p class="empty">読み込み中…</p>`);
   try {
     const logs = await call("kf_day_log", { p_date: day });
-    if (veil === v) paint(logs.length ? `<div class="log">${logs.map(logLine).join("")}</div>` : `<p class="empty">この日の記録はありません。</p>`);
-  } catch(e){ const { k } = codeOf(e); if (k) { closeSheet(); handleErr(e); } else if (veil === v) paint(`<p class="empty">読み込めませんでした。電波を確認してください。</p>`); }
+    if (alive()) paint(logs.length ? `<div class="log">${logs.map(logLine).join("")}</div>` : `<p class="empty">この日の記録はありません。</p>`);
+  } catch(e){ const { k } = codeOf(e); if (k) { closeSheet(); handleErr(e); } else if (alive()) paint(`<p class="empty">読み込めませんでした。電波を確認してください。</p>`); }
 }
 
 /* ---------- 起動 ---------- */
